@@ -1,0 +1,252 @@
+#include "../inc/help_functions.hpp"
+#include "../inc/structures.hpp"
+
+string literalToHex(string literal){
+  if (literal.find("0x") != string::npos) {
+    return literal.erase(0,2);
+  } 
+  else {
+    
+    return decToHexa(stoi(literal));
+  }
+}
+string literalWith$ToHex(string literal){
+  if (literal.find("$0x") != string::npos) {
+    return literal.erase(0,3);
+  } 
+  else {
+    return decToHexa(stoi(literal.erase(0,1)));
+  }
+}
+string decToHexa(int n)
+{
+    // ans string to store hexadecimal number
+    string ans = "";
+    
+    while (n != 0) {
+        // remainder variable to store remainder
+        int rem = 0;
+          
+        // ch variable to store each character
+        char ch;
+        // storing remainder in rem variable.
+        rem = n % 16;
+  
+        // check if temp < 10
+        if (rem < 10) {
+            ch = rem + 48;
+        }
+        else {
+            ch = rem + 55 + 32;
+        }
+          
+        // updating the ans string with the character variable
+        ans += ch;
+        n = n / 16;
+    }
+      
+    // reversing the ans string to get the final result
+    int i = 0, j = ans.size() - 1;
+    while(i <= j)
+    {
+      swap(ans[i], ans[j]);
+      i++;
+      j--;
+    }
+    return ans;
+}
+
+string csrxToHex(string csrX){
+  if(csrX.compare("%status")){
+    return "0";
+  }
+  else if(csrX.compare("%handler")){
+    return "1";
+  }
+  else if(csrX.compare("%cause")){
+    return "2";
+  }
+  else 
+    return "error";
+}
+
+string gprxToHex(string str){
+  if(str.compare("0"))
+    return "0";
+  else if (str.compare("%r1"))
+    return "1";
+  else if (str.compare("%r2"))
+    return "2";
+  else if (str.compare("%r3"))
+    return "3";
+  else if (str.compare("%r4"))
+    return "4";
+  else if (str.compare("%r5"))
+    return "5";
+  else if (str.compare("%r6"))
+    return "6";
+  else if (str.compare("%r7"))
+    return "7";
+  else if (str.compare("%r8"))
+    return "8";
+  else if (str.compare("%r9"))
+    return "9";
+  else if (str.compare("%r10"))
+    return "a";
+  else if (str.compare("%r11"))
+    return "b";
+  else if (str.compare("%r12"))
+    return "c";
+  else if (str.compare("%r13"))
+    return "d";
+  else if (str.compare("%r14"))
+    return "e";
+  else if (str.compare("%r15"))
+    return "f";
+  else 
+    return "error";
+}
+
+string asciiToHex(string input){
+  string output;
+  for(char c:input){
+    string temp;
+    if(decToHexa((int)c).size()==1) temp = "0"+decToHexa((int)c);
+    else temp = decToHexa((int)c);
+    output += temp;
+  }
+  return output;
+}
+
+
+string getLiteralRelativeDisplacement(string literal, int locationCounter,vector<AllLiteralTables> allLiteralTables, vector<SectionTable> sectionTable, int currentSection){
+  string location;
+  for(int i=0 ; i < allLiteralTables.size();i++){
+      if(allLiteralTables[i].sectionIndex != currentSection + 1) continue;
+      for(int j = 0; j < allLiteralTables[i].literalTable.size();j++){
+        if(allLiteralTables[i].literalTable[j].key == literal){
+          location = decToHexa(allLiteralTables[i].literalTable[j].location + sectionTable[currentSection].base - locationCounter);
+          while(location.size()<3){
+              location = "0"+location;
+          }
+          return location;
+        }
+      }
+    }
+    
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+int getSymbolLocation(string symbol, vector<AllLiteralTables> allLiteralTables, int currentSection){
+  for(int i=0 ; i < allLiteralTables.size();i++){
+      if(allLiteralTables[i].sectionIndex != currentSection + 1) continue;
+      for(int j = 0; j < allLiteralTables[i].literalTable.size();j++){
+        if(allLiteralTables[i].literalTable[j].key == symbol){
+          int location = allLiteralTables[i].literalTable[j].location;
+          return location;
+        }
+      }
+  }
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+bool checkIfLiteralTableContainsLiteral(string literal,vector<AllLiteralTables> allLiteralTables,int currentSection){
+  for(int i=0 ; i < allLiteralTables.size();i++){
+      if(allLiteralTables[i].sectionIndex != currentSection + 1) continue;
+      for(int j=0; j < allLiteralTables[i].literalTable.size();j++){
+        if(allLiteralTables[i].literalTable[j].key == literal){
+          return true;
+        }
+      }
+
+    }
+    return false;
+}
+
+bool checkIfSymbolIsGlobal(string symbol,vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].name == symbol){
+        return symbolTable[i].globalDef;
+      }
+  }
+    // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+int getSymbolNum(string symbol,vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].name == symbol){
+        return symbolTable[i].num;
+      }
+  }
+    // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+    
+}
+
+int getSymbolSectionNum(string symbol,vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].name == symbol){
+        return symbolTable[i].ndx;
+      }
+  }
+  // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+int getSymbolValue(string symbol,vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].name == symbol){
+        return symbolTable[i].value;
+      }
+  }
+  // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+void symbolTableOutput(vector<SymbolTable> symbolTable){
+  cout << "Num\tValue\tSize\tType\tBind\tglobDef\tNdx\tName" << endl;
+  for (int i = 0; i < symbolTable.size(); i++){
+	cout << symbolTable[i].num << "\t" << symbolTable[i].value << "\t" << symbolTable[i].size << "\t";
+    if (symbolTable[i].type == 0)
+      cout << "NOTYP"
+           << "\t";
+    else
+      cout << "SCTN"
+           << "\t";
+    if (symbolTable[i].bind == 0)
+      cout << "LOC"
+           << "\t";
+    else
+      cout << "GLOB"
+           << "\t";
+    if (symbolTable[i].globalDef)
+      cout << "true";
+    else
+      cout << "false";
+    if(symbolTable[i].ndx == 0 ) cout << "\t" << "UND" << "\t" << symbolTable[i].name << endl;
+    else cout << "\t" << symbolTable[i].ndx << "\t" << symbolTable[i].name << endl;
+  }
+}
+
+void allRelocationTableOutput(vector<AllRelocationTables> allRelocationTables){
+  for(int i = 0;i < allRelocationTables.size(); i++){
+    cout << allRelocationTables[i].realocTableName << endl;
+    cout << "Offset\tType\t\tSymbol\tAddend" << endl;
+    for (int j = 0; j < allRelocationTables[i].realocTable.size(); j++){
+      cout << allRelocationTables[i].realocTable[j].offset << '\t' 
+      << allRelocationTables[i].realocTable[j].type << '\t' 
+      << allRelocationTables[i].realocTable[j].symbol << '\t' 
+      << allRelocationTables[i].realocTable[j].addend << endl;
+    } 
+  }
+}
+/*
+int indexOfSection(vector<JoinedSectionsTable> joinedTable, string sectionName){
+  for(int i = 0; i < joinedTable.size(); i++){
+    if(joinedTable[i].sectionNameProgram.sectionName == sectionName) return i;
+  }
+  return -1;
+}
+*/
+

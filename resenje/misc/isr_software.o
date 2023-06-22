@@ -1,0 +1,20 @@
+#.isr
+81 e0 0f fc
+81 e0 0f fc
+92 0f 00 14
+92 0f 00 14
+80 00 00 00
+93 0e 00 04
+93 0e 00 04
+93 0e 00 04
+0000ABCD
+00000000
+##.symtab
+Num	Value	Size	Type	Bind	globDef	Ndx	Name
+0 0 0 0 0 0 0 NONAME
+1 0 0 1 0 0 1 isr
+2 0 0 0 1 1 0 value1
+3 0 0 0 1 1 1 isr_software
+###.rela.isr
+Offset	Type		Symbol	Addend
+36	R_X86_64_32	2	0
