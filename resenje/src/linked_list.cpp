@@ -122,3 +122,23 @@ void MappedSectionDLList::printList(){
 
         cout << endl;
 }
+
+int MappedSectionDLList::getStartAddress(string sectionName,int fileIndex){
+    Node* current = head;
+
+    while(current != nullptr && !(current->data.sectionName == sectionName && current->data.fileIndex == fileIndex)){
+        current=current->next;
+    }
+
+    if(current == nullptr) throw runtime_error("Cannot find Section Name in MappedSectionDLList!");
+
+    return current->data.addressStart;
+}
+
+int MappedSectionDLList::getFirstAddress(){
+    Node* current = head;
+
+    if(head != nullptr) return head->data.addressStart;
+
+    throw runtime_error("Head is nullptr!");
+}

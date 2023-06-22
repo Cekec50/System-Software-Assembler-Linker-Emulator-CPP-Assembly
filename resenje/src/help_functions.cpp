@@ -250,3 +250,12 @@ int indexOfSection(vector<JoinedSectionsTable> joinedTable, string sectionName){
 }
 */
 
+string getNameOfSection(vector<SymbolTable> symbolTable,int ndx){
+  for(int i = 0; i < symbolTable.size(); i++){
+    if(symbolTable[i].num == ndx) return symbolTable[i].name;
+  }
+  throw runtime_error("Index doesn't exist in Symbol Table!"); 
+}
+
+
+

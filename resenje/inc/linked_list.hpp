@@ -28,6 +28,8 @@ public:
     void removeEnd();
     void insertToSection(MappedSection value);
     void printList();
+    int getStartAddress(string sectionName,int fileIndex);
+    int getFirstAddress();
     
 };
 

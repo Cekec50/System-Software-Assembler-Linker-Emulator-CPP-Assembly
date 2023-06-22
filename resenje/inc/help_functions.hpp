@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include "structures.hpp"
+#include "linked_list.hpp"
 #include <fstream>
 #include <stdexcept>
 
@@ -43,6 +44,8 @@ void symbolTableOutput(vector<SymbolTable> symbolTable);
 void allRelocationTableOutput(vector<AllRelocationTables> allRelocationTables);
 
 //int indexOfSection(vector<JoinedSectionsTable> joinedTable, string sectionName);
+
+string getNameOfSection(vector<SymbolTable> symbolTable,int ndx);
 
 
 // output << "82 f0 " << std::hex << gprC.erase(0,2) << "0 00" << endl; 

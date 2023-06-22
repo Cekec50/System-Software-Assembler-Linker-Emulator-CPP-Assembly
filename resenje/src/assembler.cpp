@@ -43,7 +43,7 @@ void global(string name)
 {
   if (firstPass)
   {
-    symbolTable.push_back(SymbolTable{symNum++, 0, 0, NOTYP, GLOB, true, 0, name});
+    symbolTable.push_back(SymbolTable{symNum++, -1, 0, NOTYP, GLOB, true, 0, name});
   }
 }
 

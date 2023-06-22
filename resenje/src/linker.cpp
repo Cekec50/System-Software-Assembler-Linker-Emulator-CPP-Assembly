@@ -2,11 +2,23 @@
 #include "../inc/help_functions.hpp"
 #include "../inc/linked_list.hpp"
 #include <sstream>
+#include <algorithm>
 
 
 ifstream input;
 vector<LinkerInput> linkerInput;
 MappedSectionDLList* mappedSectionList;
+vector<SymbolTable> globalSymbolTable;
+
+
+bool isWhitespace(unsigned char c) {
+    if (c == ' ' || c == '\t' || c == '\n' ||
+        c == '\r' || c == '\f' || c == '\v') {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 int main(int, char **){
 
@@ -88,7 +100,7 @@ int main(int, char **){
     for(int j = 0; j < linkerInput[i].allSectionPrograms.size(); j++){
       MappedSection ms = MappedSection{};
       mappedSectionList->insertEnd(MappedSection{
-        linkerInput[i].allSectionPrograms[j].sectionName,
+        linkerInput[i].allSectionPrograms[j].sectionName.erase(0,2),
         i,
         0,
         linkerInput[i].allSectionPrograms[j].sectionSize
@@ -96,6 +108,56 @@ int main(int, char **){
     }
   }
   mappedSectionList->printList();
+  // MAPPING END
 
+  // GLOBAL SYMBOL TABLE, LOCAL SECTIONS AND SYMBOLS INIT
+  int num = 0;
+  for(int i = 0; i < linkerInput.size(); i++){
+    for(int j = 0; j < linkerInput[i].symbolTable.size(); j++){
+      if(linkerInput[i].symbolTable[j].ndx != 0){
+        string sectionName;
+        if(linkerInput[i].symbolTable[j].type == SCTN) sectionName = linkerInput[i].symbolTable[j].name;
+        else sectionName = getNameOfSection(linkerInput[i].symbolTable,linkerInput[i].symbolTable[j].ndx);
+        int sectionStartAddress = mappedSectionList->getStartAddress(sectionName,i);
+        linkerInput[i].symbolTable[j].value += sectionStartAddress;
+
+        if(linkerInput[i].symbolTable[j].bind == GLOB){
+          globalSymbolTable.push_back(SymbolTable{
+            0,
+            linkerInput[i].symbolTable[j].value,
+            0,
+            NOTYP,
+            GLOB,
+            true,
+            -1,
+            linkerInput[i].symbolTable[j].name
+            });
+        }
+      }
+    }
+  }
+  // GLOBAL SYMBOL TABLE, LOCAL SECTIONS AND SYMBOLS INIT END
+  symbolTableOutput(globalSymbolTable);
+
+  for(int i = 0; i < linkerInput.size(); i++){
+    for(int j = 0; j < linkerInput[i].allSectionPrograms.size(); j++){
+      linkerInput[i].allSectionPrograms[j].sectionProgram.erase(std::remove_if(
+      linkerInput[i].allSectionPrograms[j].sectionProgram.begin(), 
+      linkerInput[i].allSectionPrograms[j].sectionProgram.end(), isWhitespace), 
+      linkerInput[i].allSectionPrograms[j].sectionProgram.end());
+    }
+  }
+  // READING INPUT END
+  
+  for(int i = 0; i < linkerInput.size(); i++){
+    for(int j = 0; j < linkerInput[i].allSectionPrograms.size();j++){
+      cout << linkerInput[i].allSectionPrograms[j].sectionName << endl << linkerInput[i].allSectionPrograms[j].sectionProgram << endl;
+      cout << "SECTION SIZE: " << linkerInput[i].allSectionPrograms[j].sectionSize << endl;
+    }
+    //cout << linkerInput[i].allSectionPrograms.size() << "  " << linkerInput[i].allRelocationTables.size() << endl;
+      //symbolTableOutput(linkerInput[i].symbolTable);
+      //allRelocationTableOutput(linkerInput[i].allRelocationTables);
+  }
+  int outputStartAddress = mappedSectionList->getFirstAddress();
 
 }
