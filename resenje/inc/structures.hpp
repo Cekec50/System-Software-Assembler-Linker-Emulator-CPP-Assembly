@@ -80,8 +80,14 @@ typedef struct {
 
 
 typedef struct{
+  bool explicitDefinition;
   string sectionName;
   int fileIndex;
   int addressStart;
   int sectionSize;
 } MappedSection;
+
+typedef struct {
+  string sectionName;
+  int address;
+} ExplicitDefinedAddress;

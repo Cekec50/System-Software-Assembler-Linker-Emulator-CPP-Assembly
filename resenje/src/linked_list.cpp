@@ -40,6 +40,19 @@ void MappedSectionDLList::insertEnd(MappedSection value) {
   }
 }
 
+void MappedSectionDLList::insertEndDefinedAddress(MappedSection value) {
+  Node* newNode = new Node(value);
+
+  if (head == nullptr) {
+      head = newNode;
+      tail = newNode;
+  } else {
+      tail->next = newNode;
+      newNode->prev = tail;
+      tail = newNode;
+  }
+}
+
 void MappedSectionDLList::removeFront() {
   if (head == nullptr) {
       std::cout << "List is empty. Cannot remove from front." << std::endl;
@@ -91,22 +104,27 @@ void MappedSectionDLList::insertToSection(MappedSection value) {
 
   Node* current = tail;
 
-  while (current != nullptr && current->data.sectionName == value.sectionName ) {
+  while (current != nullptr && current->data.sectionName != value.sectionName ) {
       current = current->prev;
   }
 
   if (current != nullptr ) {
-      newNode->prev = current;
-      newNode->data.addressStart = current->data.addressStart + current->data.sectionSize;
-      newNode->next = current->next;
+    newNode->prev = current;
+    newNode->data.addressStart = current->data.addressStart + current->data.sectionSize;
+    newNode->next = current->next;
 
-      if (current->next != nullptr) {
-          current->next->prev = newNode;
-      } else {
-          tail = newNode;
-      }
-
-      current->next = newNode;
+    if (current->next != nullptr) {
+        current->next->prev = newNode;
+    } else {
+        tail = newNode;
+    }
+    current->next = newNode;
+    // ADDRESS UPDATE
+    current = newNode->next;
+    while(current!= nullptr && !current->data.explicitDefinition){
+        current->data.addressStart= current->prev->data.addressStart + current->prev->data.sectionSize;
+        current = current->next;
+    }
   } else {
       insertEnd(value);
   }
@@ -141,4 +159,10 @@ int MappedSectionDLList::getFirstAddress(){
     if(head != nullptr) return head->data.addressStart;
 
     throw runtime_error("Head is nullptr!");
+}
+
+int MappedSectionDLList::getProgramLength(){
+    if(tail != nullptr) return tail->data.addressStart + tail->data.sectionSize;
+
+    throw runtime_error("Tail is nullptr!");
 }

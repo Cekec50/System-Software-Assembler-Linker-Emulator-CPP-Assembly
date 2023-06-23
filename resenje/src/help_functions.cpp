@@ -20,6 +20,7 @@ string literalWith$ToHex(string literal){
 }
 string decToHexa(int n)
 {
+  if (n == 0) return "0";
     // ans string to store hexadecimal number
     string ans = "";
     
@@ -52,6 +53,47 @@ string decToHexa(int n)
       swap(ans[i], ans[j]);
       i++;
       j--;
+    }
+    return ans;
+}
+string decToHexaXXXXFormat(int n)
+{
+  if (n == 0) return "0000";
+    // ans string to store hexadecimal number
+    string ans = "";
+    
+    while (n != 0) {
+        // remainder variable to store remainder
+        int rem = 0;
+          
+        // ch variable to store each character
+        char ch;
+        // storing remainder in rem variable.
+        rem = n % 16;
+  
+        // check if temp < 10
+        if (rem < 10) {
+            ch = rem + 48;
+        }
+        else {
+            ch = rem + 55 + 32;
+        }
+          
+        // updating the ans string with the character variable
+        ans += ch;
+        n = n / 16;
+    }
+      
+    // reversing the ans string to get the final result
+    int i = 0, j = ans.size() - 1;
+    while(i <= j)
+    {
+      swap(ans[i], ans[j]);
+      i++;
+      j--;
+    }
+    while(ans.size()<4){
+        ans = "0"+ans;
     }
     return ans;
 }
@@ -147,7 +189,7 @@ int getSymbolLocation(string symbol, vector<AllLiteralTables> allLiteralTables, 
         }
       }
   }
-  throw runtime_error("Symbol not found in Symbol Table!");
+  throw runtime_error("Symbol not found in Literal Table!");
 }
 
 bool checkIfLiteralTableContainsLiteral(string literal,vector<AllLiteralTables> allLiteralTables,int currentSection){
@@ -184,6 +226,16 @@ int getSymbolNum(string symbol,vector<SymbolTable> symbolTable){
     
 }
 
+string getSymbolName(int num, vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].num == num){
+        return symbolTable[i].name;
+      }
+  }
+    // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
 int getSymbolSectionNum(string symbol,vector<SymbolTable> symbolTable){
   for(int i = 0; i < symbolTable.size();i++){
       if(symbolTable[i].name == symbol){
@@ -197,6 +249,16 @@ int getSymbolSectionNum(string symbol,vector<SymbolTable> symbolTable){
 int getSymbolValue(string symbol,vector<SymbolTable> symbolTable){
   for(int i = 0; i < symbolTable.size();i++){
       if(symbolTable[i].name == symbol){
+        return symbolTable[i].value;
+      }
+  }
+  // ERROR: SYMBOL NOT FOUND
+  throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+int getSymbolValueByNum(int ndx,vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size();i++){
+      if(symbolTable[i].num == ndx){
         return symbolTable[i].value;
       }
   }
@@ -250,12 +312,56 @@ int indexOfSection(vector<JoinedSectionsTable> joinedTable, string sectionName){
 }
 */
 
-string getNameOfSection(vector<SymbolTable> symbolTable,int ndx){
+string getNameOfSection(vector<SymbolTable> symbolTable,int num){
   for(int i = 0; i < symbolTable.size(); i++){
-    if(symbolTable[i].num == ndx) return symbolTable[i].name;
+    if(symbolTable[i].num == num) return symbolTable[i].name;
   }
-  throw runtime_error("Index doesn't exist in Symbol Table!"); 
+  throw runtime_error("Symbol number doesn't exist in Symbol Table!"); 
 }
 
+bool isWhitespace(unsigned char c) {
+    if (c == ' ' || c == '\t' || c == '\n' ||
+        c == '\r' || c == '\f' || c == '\v') {
+        return true;
+    } else {
+        return false;
+    }
+}
 
+void printRelaTableFromLinkerInput(vector<LinkerInput> linkerInput){
+  for(int i = 0; i < linkerInput.size(); i++){
+    cout << "File " << i + 1 << endl;
+    for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
+      cout << linkerInput[i].allRelocationTables[j].realocTableName << endl;
+      for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
+        cout << linkerInput[i].allRelocationTables[j].realocTable[k].offset << '\t'
+        << linkerInput[i].allRelocationTables[j].realocTable[k].type << '\t'
+        << linkerInput[i].allRelocationTables[j].realocTable[k].symbol << '\t'
+        << linkerInput[i].allRelocationTables[j].realocTable[k].addend << endl;
+      }
+    }
+  }
+}
+
+bool checkIfUndefined(vector<SymbolTable> symbolTable, int symbolNum){
+  for(int i = 0; i < symbolTable.size(); i++){
+    if(symbolTable[i].num == symbolNum){
+      if(symbolTable[i].ndx == 0) return true;
+      else return false;
+    }
+  }
+  throw runtime_error("Symbol number doesn't exist in Symbol Table!"); 
+}
+
+string relocateProgram(string outputProgram,int byteLocation,int symbolValue){
+  int location = byteLocation*2;
+  string hex_value = decToHexa(symbolValue);
+  while(hex_value.size()<8){
+    hex_value = "0" + hex_value;
+  }
+  for(int i = 0; i < 8; i++){
+    outputProgram[location+i] = hex_value[i];
+  }
+  return outputProgram;
+}
 

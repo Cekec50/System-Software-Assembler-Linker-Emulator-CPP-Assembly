@@ -19,6 +19,8 @@ string literalWith$ToHex(string literal);
 
 string decToHexa(int n);
 
+string decToHexaXXXXFormat(int n);
+
 string csrxToHex(string csrX);
 
 string gprxToHex(string str);
@@ -39,6 +41,10 @@ int getSymbolSectionNum(string symbol,vector<SymbolTable> symbolTable);
 
 int getSymbolValue(string symbol,vector<SymbolTable> symbolTable);
 
+int getSymbolValueByNum(int ndx,vector<SymbolTable> symbolTable);
+
+string getSymbolName(int num, vector<SymbolTable> symbolTable);
+
 void symbolTableOutput(vector<SymbolTable> symbolTable);
 
 void allRelocationTableOutput(vector<AllRelocationTables> allRelocationTables);
@@ -47,6 +53,13 @@ void allRelocationTableOutput(vector<AllRelocationTables> allRelocationTables);
 
 string getNameOfSection(vector<SymbolTable> symbolTable,int ndx);
 
+bool isWhitespace(unsigned char c);
+
+void printRelaTableFromLinkerInput(vector<LinkerInput> linkerInput);
+
+bool checkIfUndefined(vector<SymbolTable> symbolTable, int symbolNum);
+
+string relocateProgram(string outputProgram,int location,int symbolValue);
 
 // output << "82 f0 " << std::hex << gprC.erase(0,2) << "0 00" << endl; 
 

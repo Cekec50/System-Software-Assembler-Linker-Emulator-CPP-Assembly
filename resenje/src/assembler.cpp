@@ -856,10 +856,8 @@ int main(int, char **)
   }
   cout << "--------------------------------------------------------------\n";
   // firstPass END
-  //poolTemp = "";
   firstPass = false;
   locationCounter = 0;
-  //sectionIndx = 0;
   currentSection = -1;
   fclose(myfile);
   myfile = fopen(inputName.c_str(), "r");

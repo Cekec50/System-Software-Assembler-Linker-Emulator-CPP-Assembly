@@ -24,12 +24,14 @@ public:
 
     void insertFront(MappedSection value);
     void insertEnd(MappedSection value);
+    void insertEndDefinedAddress(MappedSection value); 
     void removeFront();
     void removeEnd();
     void insertToSection(MappedSection value);
     void printList();
     int getStartAddress(string sectionName,int fileIndex);
     int getFirstAddress();
+    int getProgramLength();
     
 };
 
