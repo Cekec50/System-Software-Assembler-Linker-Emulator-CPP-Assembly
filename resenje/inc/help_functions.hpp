@@ -19,7 +19,9 @@ string literalWith$ToHex(string literal);
 
 string decToHexa(int n);
 
-string decToHexaXXXXFormat(int n);
+string decToHexaXXXXXXXXFormat(int n);
+
+string decToHexaXXXXXXXXUpperFormat(int n);
 
 string csrxToHex(string csrX);
 
@@ -60,6 +62,12 @@ void printRelaTableFromLinkerInput(vector<LinkerInput> linkerInput);
 bool checkIfUndefined(vector<SymbolTable> symbolTable, int symbolNum);
 
 string relocateProgram(string outputProgram,int location,int symbolValue);
+
+bool compareAddresses(ExplicitDefinedAddress i1, ExplicitDefinedAddress i2);
+
+string getSectionProgram(vector<LinkerInput> linkerInput,string sectionName,int fileIndex);
+
+
 
 // output << "82 f0 " << std::hex << gprC.erase(0,2) << "0 00" << endl; 
 

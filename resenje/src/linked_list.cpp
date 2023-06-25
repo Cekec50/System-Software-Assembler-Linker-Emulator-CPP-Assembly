@@ -130,6 +130,39 @@ void MappedSectionDLList::insertToSection(MappedSection value) {
   }
 }
 
+void MappedSectionDLList::insertToSectionDefinedAddress(MappedSection value) {
+    
+  if (head == nullptr) {
+      insertFront(value);
+      return;
+  }
+
+  Node* newNode = new Node(value);
+
+  Node* current = tail;
+
+  while (current != nullptr && current->data.sectionName != value.sectionName ) {
+      current = current->prev;
+  }
+
+  if (current != nullptr ) {
+    newNode->prev = current;
+    newNode->data.addressStart = current->data.addressStart + current->data.sectionSize;
+    newNode->next = current->next;
+
+    if (current->next != nullptr) {
+        current->next->prev = newNode;
+    } else {
+        tail = newNode;
+    }
+    current->next = newNode;
+    // ADDRESS UPDATE
+    current = newNode->next;
+  } else {
+      insertEndDefinedAddress(value);
+  }
+}
+
 void MappedSectionDLList::printList(){
   Node* current = head;
 
@@ -153,16 +186,90 @@ int MappedSectionDLList::getStartAddress(string sectionName,int fileIndex){
     return current->data.addressStart;
 }
 
-int MappedSectionDLList::getFirstAddress(){
+int MappedSectionDLList::getSectionAddress(int i){
     Node* current = head;
 
-    if(head != nullptr) return head->data.addressStart;
-
-    throw runtime_error("Head is nullptr!");
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int cnt = 0;
+    while(cnt < i && current!= nullptr){
+        current = current->next;
+        cnt++;
+    }
+    if(current == nullptr) throw runtime_error("Index out of range!");
+    return current->data.addressStart;
 }
 
-int MappedSectionDLList::getProgramLength(){
-    if(tail != nullptr) return tail->data.addressStart + tail->data.sectionSize;
+int MappedSectionDLList::getSectionLength(int i){
+    Node* current = head;
 
-    throw runtime_error("Tail is nullptr!");
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int cnt = 0;
+    while(cnt < i && current!= nullptr){
+        current = current->next;
+        cnt++;
+    }
+    if(current == nullptr) throw runtime_error("Index out of range!");
+    return current->data.sectionSize;
+}
+
+void MappedSectionDLList::checkIfMappedAddressesOverlap(){
+    Node* current = head;
+
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    current = current->next;
+    while(current != nullptr){
+        if(current->data.addressStart < current->prev->data.addressStart + current->prev->data.sectionSize) throw runtime_error("Memory mapping overlap!");
+        current = current->next;
+    }
+}
+
+int MappedSectionDLList::getNumberOfSections(){
+    Node* current = head;
+
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int ret = 0;
+    while(current != nullptr){
+        ret++;
+        current = current->next;
+    }
+    return ret;
+}
+
+string MappedSectionDLList::getSectionName(int i){
+    Node* current = head;
+
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int cnt = 0;
+    while(cnt < i && current!= nullptr){
+        current = current->next;
+        cnt++;
+    }
+    if(current == nullptr) throw runtime_error("Index out of range!");
+    return current->data.sectionName;
+}
+
+int MappedSectionDLList::getFileIndex(int i){
+    Node* current = head;
+
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int cnt = 0;
+    while(cnt < i && current!= nullptr){
+        current = current->next;
+        cnt++;
+    }
+    if(current == nullptr) throw runtime_error("Index out of range!");
+    return current->data.fileIndex;
+}
+
+int MappedSectionDLList::getDisplacement(string sectionName, int fileIndex){
+    Node* current = head;
+
+    if(head == nullptr) throw runtime_error("Head is nullptr!");
+    int displacement = 0;
+    while(current!= nullptr && (current->data.sectionName != sectionName || current->data.fileIndex != fileIndex)){
+        displacement += current->data.sectionSize;
+        current = current->next;
+    }
+    if(current == nullptr) throw runtime_error("Section name and file index invalid!");
+    return displacement;
 }

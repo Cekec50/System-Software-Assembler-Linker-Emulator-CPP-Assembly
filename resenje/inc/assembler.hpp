@@ -110,11 +110,5 @@ void shr(string gprA,string gprB);
 void jmp_literal(string literal);
 void jmp_symbol(string symbol);
 
-void beq(string gprA, string gprB, string operand);
-
-void bne(string gprA, string gprB, string operand);
-
-void bgt(string gprA, string gprB, string operand);
-
 extern FILE *yyin;
 

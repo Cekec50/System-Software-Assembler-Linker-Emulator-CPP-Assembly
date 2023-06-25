@@ -17,10 +17,13 @@ ofstream output;
 
 int main(int, char **){
 try{
+  //cout << stoi("80000000",0,16) << endl;
+  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",stoi("40000000",0,16)}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
+  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.math",stoi("F0000000",0,16)});
+  //sort(explicitDefinedAddresses.begin(), explicitDefinedAddresses.end(), compareAddresses);
+  vector<string> allInputs = {"handler.o","isr_software.o","isr_terminal.o","isr_timer.o","main.o","math.o"};
+
   // READING INPUT 
-  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",100}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
-  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_handler",500});
-  vector<string> allInputs = {"handler.o","isr_software.o","isr_terminal.o","main.o","math.o","isr_timer.o"};
   for(int i = 0; i < allInputs.size(); i++){
     vector<SectionProgram> allSectionPrograms;
     vector<SymbolTable> symbolTable;
@@ -42,7 +45,7 @@ try{
         getline(input,line);
         sectionSize += 4;
       }
-      linkerInput[i].allSectionPrograms.push_back(SectionProgram{sectionName,sectionProgram,sectionSize});
+      linkerInput[i].allSectionPrograms.push_back(SectionProgram{false,sectionName,sectionProgram,sectionSize});
       if(line == "##.symtab"){
         break;
       }
@@ -92,28 +95,29 @@ try{
   }
   */
   mappedSectionList = new MappedSectionDLList();
+
   // MAP EXPLICIT DEFINED ADDRESSES
-  /*
   for(int k = 0; k < explicitDefinedAddresses.size(); k++){
     for(int i = 0; i < linkerInput.size(); i++){
       for(int j = 0; j < linkerInput[i].allSectionPrograms.size(); j++){
         if(linkerInput[i].allSectionPrograms[j].sectionName==explicitDefinedAddresses[k].sectionName){
-          string sectionNamee = linkerInput[i].allSectionPrograms[j].sectionName;
-          mappedSectionList->insertEndDefinedAddress(MappedSection{
+          
+          mappedSectionList->insertToSectionDefinedAddress(MappedSection{
             true,
-            sectionNamee.erase(0,2),
+            linkerInput[i].allSectionPrograms[j].sectionName.erase(0,2),
             i,
             explicitDefinedAddresses[k].address,
             linkerInput[i].allSectionPrograms[j].sectionSize
             });
+          linkerInput[i].allSectionPrograms[j].mapped = true;
         }
       }
     }
-  }*/
+  }
   // MAPPING
   for(int i = 0; i < linkerInput.size(); i++){
     for(int j = 0; j < linkerInput[i].allSectionPrograms.size(); j++){
-      //MappedSection ms = MappedSection{};x
+      if(linkerInput[i].allSectionPrograms[j].mapped) continue;
       mappedSectionList->insertToSection(MappedSection{
         false,
         linkerInput[i].allSectionPrograms[j].sectionName.erase(0,2),
@@ -127,7 +131,7 @@ try{
   // MAPPING END
 
   // CHECK IF ADDRESSES OVERLAP
-  // checkIfMappedAddressesOverlap();
+  mappedSectionList->checkIfMappedAddressesOverlap();
 
   // GLOBAL SYMBOL TABLE INIT, LOCAL SECTIONS AND SYMBOLS UPDATE
   int num = 0;
@@ -162,34 +166,35 @@ try{
   //symbolTableOutput(globalSymbolTable);
 
   // RELA TABLE UPDATE
-for(int i = 0; i < linkerInput.size(); i++){
-    for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
-      // cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
-      string sectionName = linkerInput[i].allRelocationTables[j].realocTableName.erase(0,9);
-      int fileIndex = i;
-      int sectionAddress = mappedSectionList->getStartAddress(sectionName,fileIndex);
-      for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
-       linkerInput[i].allRelocationTables[j].realocTable[k].offset += sectionAddress;
+  for(int i = 0; i < linkerInput.size(); i++){
+      for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
+        // cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
+        string sectionName = linkerInput[i].allRelocationTables[j].realocTableName.erase(0,9);
+        int fileIndex = i;
+        int displacement = mappedSectionList->getDisplacement(sectionName,fileIndex);
+        for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
+        linkerInput[i].allRelocationTables[j].realocTable[k].offset += displacement;
+        }
       }
-    }
-}
+  }
   // RELA TABLE UPDATE END
 
   // FINAL PROGRAM PREPARE
   string outputProgram = "";
-  for(int i = 0; i < linkerInput.size(); i++){
-    for(int j = 0; j < linkerInput[i].allSectionPrograms.size(); j++){
-      linkerInput[i].allSectionPrograms[j].sectionProgram.erase(std::remove_if(
-      linkerInput[i].allSectionPrograms[j].sectionProgram.begin(), 
-      linkerInput[i].allSectionPrograms[j].sectionProgram.end(), isWhitespace), 
-      linkerInput[i].allSectionPrograms[j].sectionProgram.end());
-      outputProgram += linkerInput[i].allSectionPrograms[j].sectionProgram;
-    }
+  for(int i = 0; i < mappedSectionList->getNumberOfSections(); i++){
+    string sectionName = mappedSectionList->getSectionName(i);
+    int fileIndex = mappedSectionList->getFileIndex(i);;
+    string sectionProgram = getSectionProgram(linkerInput,sectionName,fileIndex);
+    sectionProgram.erase(std::remove_if(
+      sectionProgram.begin(), 
+      sectionProgram.end(), isWhitespace), 
+      sectionProgram.end());
+      outputProgram += sectionProgram;
   }
+  //cout << outputProgram << endl;
   // FINAL PROGRAM PREPARE END
 
   // RELOCATION
-  //printRelaTableFromLinkerInput(linkerInput);
 
   for(int i = 0; i < linkerInput.size(); i++){
     for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
@@ -212,41 +217,52 @@ for(int i = 0; i < linkerInput.size(); i++){
     }
   }
   // RELOCATION END
-  //cout << outputProgram << endl;
-  // OUTPUT
-  int address = mappedSectionList->getFirstAddress();
-  int outputProgramLength = mappedSectionList->getProgramLength();
-  output.open("output.hex");
 
-  for(int i = 0; i < outputProgramLength/8; i++){
-    output << decToHexaXXXXFormat(address) << ":";
-    for(int j = 0; j < 16; j++){
-      if(j%2==0 && j!=16) output << " ";
-      output << char(toupper(outputProgram[i*16+j])); 
-    } 
-    if(i!=outputProgramLength/8 - 1){
-      output << endl;
-    } 
-    else {
-      // check if theres one more instruction
-      if(outputProgramLength%8){
-        output << endl;
-        address += 8;
-        output << decToHexaXXXXFormat(address) << ":";
-        for(int j = 0; j < 8; j++){
-          if(j%2==0 && j!=8) output << " ";
-          output << char(toupper(outputProgram[(i+1)*16+j])); 
+  // OUTPUT
+    ofstream output("output.hex");
+    int address = mappedSectionList->getSectionAddress(0);
+    int sectionLength = mappedSectionList->getSectionLength(0);
+    vector<ProgramByAddress> programBy4Adress;
+    int cnt = 0;
+    for(int i = 0; i < mappedSectionList->getNumberOfSections(); i++){
+      int address = mappedSectionList->getSectionAddress(i);
+      for(int j = 0; j < mappedSectionList->getSectionLength(i)/4; j++){
+        string outputTmp = "";
+        for(int k = 0; k < 4; k++){
+          outputTmp = outputTmp + char(toupper(outputProgram[cnt])) + char(toupper(outputProgram[cnt+1]));
+          if(k != 3) outputTmp += " ";
+          cnt += 2;
         }
+        programBy4Adress.push_back(ProgramByAddress{address,outputTmp});
+        //cout << address << ": " << outputTmp <<endl;
+        address += 4;
       }
     }
-    address += 8;
-  }
-output.close();
+    int outCounter = 0;
+    while(outCounter < programBy4Adress.size()){
+      if(programBy4Adress[outCounter].address + 4 ==programBy4Adress[outCounter+1].address){
+        output << decToHexaXXXXXXXXUpperFormat(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program << " " << programBy4Adress[outCounter+1].program;
+        if(outCounter != programBy4Adress.size()-2) output << endl;
+        outCounter += 2;
+      }
+      else {
+        output << decToHexaXXXXXXXXUpperFormat(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program;
+        if(outCounter != programBy4Adress.size()-1) output << endl;
+        outCounter += 1;
+      }
+    }
+
+    
+  
+    output.close();
 }
 catch(runtime_error& e){
-    cerr << "LINKING ERROR: " << e.what() << endl;
-  }
-  catch(invalid_argument& e){
-    cerr << "LINKING ERROR: " << e.what() << endl;
-  }
+  cerr << "LINKING ERROR: " << e.what() << endl;
+}
+catch(invalid_argument& e){
+  cerr << "LINKING ERROR: " << e.what() << endl;
+}
+catch(out_of_range& e){
+  cerr << "LINKING ERROR: " << e.what() << endl;
+}
 }

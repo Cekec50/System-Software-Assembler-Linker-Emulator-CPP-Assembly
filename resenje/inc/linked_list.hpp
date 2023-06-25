@@ -28,10 +28,16 @@ public:
     void removeFront();
     void removeEnd();
     void insertToSection(MappedSection value);
+    void insertToSectionDefinedAddress(MappedSection value);
     void printList();
     int getStartAddress(string sectionName,int fileIndex);
-    int getFirstAddress();
-    int getProgramLength();
+    int getSectionAddress(int i);
+    int getSectionLength(int i);
+    void checkIfMappedAddressesOverlap();
+    int getNumberOfSections();
+    string getSectionName(int i);
+    int getFileIndex(int i);
+    int getDisplacement(string sectionName, int fileIndex);
     
 };
 

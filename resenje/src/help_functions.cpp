@@ -56,9 +56,9 @@ string decToHexa(int n)
     }
     return ans;
 }
-string decToHexaXXXXFormat(int n)
+string decToHexaXXXXXXXXFormat(int n)
 {
-  if (n == 0) return "0000";
+  if (n == 0) return "00000000";
     // ans string to store hexadecimal number
     string ans = "";
     
@@ -92,7 +92,48 @@ string decToHexaXXXXFormat(int n)
       i++;
       j--;
     }
-    while(ans.size()<4){
+    while(ans.size()<8){
+        ans = "0"+ans;
+    }
+    return ans;
+}
+string decToHexaXXXXXXXXUpperFormat(int n)
+{
+  if (n == 0) return "00000000";
+    // ans string to store hexadecimal number
+    string ans = "";
+    
+    while (n != 0) {
+        // remainder variable to store remainder
+        int rem = 0;
+          
+        // ch variable to store each character
+        char ch;
+        // storing remainder in rem variable.
+        rem = n % 16;
+  
+        // check if temp < 10
+        if (rem < 10) {
+            ch = rem + 48;
+        }
+        else {
+            ch = rem + 55 ;
+        }
+          
+        // updating the ans string with the character variable
+        ans += ch;
+        n = n / 16;
+    }
+      
+    // reversing the ans string to get the final result
+    int i = 0, j = ans.size() - 1;
+    while(i <= j)
+    {
+      swap(ans[i], ans[j]);
+      i++;
+      j--;
+    }
+    while(ans.size()<8){
         ans = "0"+ans;
     }
     return ans;
@@ -146,7 +187,7 @@ string gprxToHex(string str){
   else if (str.compare("%r15"))
     return "f";
   else 
-    return "error";
+    throw runtime_error("Unknown register!");
 }
 
 string asciiToHex(string input){
@@ -363,5 +404,18 @@ string relocateProgram(string outputProgram,int byteLocation,int symbolValue){
     outputProgram[location+i] = hex_value[i];
   }
   return outputProgram;
+}
+
+bool compareAddresses(ExplicitDefinedAddress i1, ExplicitDefinedAddress i2){
+    return (i1.address < i2.address);
+}
+
+
+string getSectionProgram(vector<LinkerInput> linkerInput,string sectionName,int fileIndex){
+  for(int i = 0; i < linkerInput[fileIndex].allSectionPrograms.size(); i++){
+    if(linkerInput[fileIndex].allSectionPrograms[i].sectionName == sectionName) 
+      return linkerInput[fileIndex].allSectionPrograms[i].sectionProgram;
+  }
+  throw runtime_error("No section with that name and index!");
 }
 

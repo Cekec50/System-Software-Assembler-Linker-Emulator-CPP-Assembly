@@ -67,6 +67,7 @@ typedef struct{
 } AllLiteralTables;
 
 typedef struct {
+  bool mapped;
   string sectionName;
   string sectionProgram;
   int sectionSize;
@@ -91,3 +92,8 @@ typedef struct {
   string sectionName;
   int address;
 } ExplicitDefinedAddress;
+
+typedef struct {
+  int address;
+  string program;
+} ProgramByAddress;
