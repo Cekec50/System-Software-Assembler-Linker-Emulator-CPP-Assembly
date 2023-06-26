@@ -37,6 +37,10 @@ bool checkIfLiteralTableContainsLiteral(string literal,vector<AllLiteralTables> 
 
 bool checkIfSymbolIsGlobal(string symbol,vector<SymbolTable> symbolTable);
 
+void checkForUndefinedSymbols(vector<SymbolTable> symbolTable);
+
+void checkForDuplicateDefinitions(vector<SymbolTable> globalSymbolTable);
+
 int getSymbolNum(string symbol,vector<SymbolTable> symbolTable);
 
 int getSymbolSectionNum(string symbol,vector<SymbolTable> symbolTable);
@@ -66,6 +70,8 @@ string relocateProgram(string outputProgram,int location,int symbolValue);
 bool compareAddresses(ExplicitDefinedAddress i1, ExplicitDefinedAddress i2);
 
 string getSectionProgram(vector<LinkerInput> linkerInput,string sectionName,int fileIndex);
+
+string intToTwosComplementHexString(int value);
 
 
 

@@ -1,6 +1,8 @@
 #include "../inc/help_functions.hpp"
 #include "../inc/structures.hpp"
 
+#include <sstream>
+
 string literalToHex(string literal){
   if (literal.find("0x") != string::npos) {
     return literal.erase(0,2);
@@ -140,13 +142,13 @@ string decToHexaXXXXXXXXUpperFormat(int n)
 }
 
 string csrxToHex(string csrX){
-  if(csrX.compare("%status")){
+  if(!csrX.compare("%status")){
     return "0";
   }
-  else if(csrX.compare("%handler")){
+  else if(!csrX.compare("%handler")){
     return "1";
   }
-  else if(csrX.compare("%cause")){
+  else if(!csrX.compare("%cause")){
     return "2";
   }
   else 
@@ -154,37 +156,41 @@ string csrxToHex(string csrX){
 }
 
 string gprxToHex(string str){
-  if(str.compare("0"))
+  if(!str.compare("%r0"))
     return "0";
-  else if (str.compare("%r1"))
+  else if (!str.compare("%r1"))
     return "1";
-  else if (str.compare("%r2"))
+  else if (!str.compare("%r2"))
     return "2";
-  else if (str.compare("%r3"))
+  else if (!str.compare("%r3"))
     return "3";
-  else if (str.compare("%r4"))
+  else if (!str.compare("%r4"))
     return "4";
-  else if (str.compare("%r5"))
+  else if (!str.compare("%r5"))
     return "5";
-  else if (str.compare("%r6"))
+  else if (!str.compare("%r6"))
     return "6";
-  else if (str.compare("%r7"))
+  else if (!str.compare("%r7"))
     return "7";
-  else if (str.compare("%r8"))
+  else if (!str.compare("%r8"))
     return "8";
-  else if (str.compare("%r9"))
+  else if (!str.compare("%r9"))
     return "9";
-  else if (str.compare("%r10"))
+  else if (!str.compare("%r10"))
     return "a";
-  else if (str.compare("%r11"))
+  else if (!str.compare("%r11"))
     return "b";
-  else if (str.compare("%r12"))
+  else if (!str.compare("%r12"))
     return "c";
-  else if (str.compare("%r13"))
+  else if (!str.compare("%r13"))
     return "d";
-  else if (str.compare("%r14"))
+  else if (!str.compare("%r14"))
     return "e";
-  else if (str.compare("%r15"))
+  else if (!str.compare("%sp"))
+    return "e";
+  else if (!str.compare("%r15"))
+    return "f";
+  else if (!str.compare("%pc"))
     return "f";
   else 
     throw runtime_error("Unknown register!");
@@ -254,6 +260,24 @@ bool checkIfSymbolIsGlobal(string symbol,vector<SymbolTable> symbolTable){
   }
     // ERROR: SYMBOL NOT FOUND
   throw runtime_error("Symbol not found in Symbol Table!");
+}
+
+void checkForUndefinedSymbols(vector<SymbolTable> symbolTable){
+  for(int i = 0; i < symbolTable.size(); i++){
+    if(symbolTable[i].value == -1 && symbolTable[i].ndx == 0)
+      throw runtime_error("Symbol Table contains undefined symbol! " + symbolTable[i].name);
+  }
+}
+
+void checkForDuplicateDefinitions(vector<SymbolTable> globalSymbolTable){
+  for(int i = 0;i < globalSymbolTable.size(); i++){
+    for(int j=i+1; j < globalSymbolTable.size(); j++){
+      if(globalSymbolTable[i].name == globalSymbolTable[j].name){
+        symbolTableOutput(globalSymbolTable);
+        throw runtime_error("Duplcate symbol definition!");
+      }
+    }
+  }
 }
 
 int getSymbolNum(string symbol,vector<SymbolTable> symbolTable){
@@ -396,7 +420,7 @@ bool checkIfUndefined(vector<SymbolTable> symbolTable, int symbolNum){
 
 string relocateProgram(string outputProgram,int byteLocation,int symbolValue){
   int location = byteLocation*2;
-  string hex_value = decToHexa(symbolValue);
+  string hex_value = intToTwosComplementHexString(symbolValue);
   while(hex_value.size()<8){
     hex_value = "0" + hex_value;
   }
@@ -419,3 +443,39 @@ string getSectionProgram(vector<LinkerInput> linkerInput,string sectionName,int 
   throw runtime_error("No section with that name and index!");
 }
 
+string intToTwosComplementHexString(int value) {
+    std::stringstream ss;
+    
+    // Create a union to interpret the bits of the integer
+    union {
+        int intValue;
+        unsigned int unsignedValue;
+    } u;
+    
+    u.intValue = value;
+    unsigned int unsignedValue = u.unsignedValue;
+    
+    // Convert the unsigned value to hexadecimal string
+    ss << std::hex << unsignedValue;
+    std::string hexString = ss.str();
+    
+    // Calculate the number of hexadecimal digits needed to represent the integer
+    int numDigits = sizeof(int) * 2;
+    
+    // If the most significant bit (MSB) is set, add necessary leading zeros
+    if (value < 0 && hexString.length() < numDigits) {
+        int numZeros = numDigits - hexString.length();
+        hexString = std::string(numZeros, '0') + hexString;
+    }
+    
+    // Convert the hex string to uppercase
+    for (char& c : hexString) {
+        c = std::toupper(c);
+    }
+    while(hexString.size()<8){
+        hexString = "0"+hexString;
+    }
+    return hexString;
+}
+    
+    

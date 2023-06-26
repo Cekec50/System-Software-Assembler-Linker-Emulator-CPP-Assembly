@@ -449,11 +449,50 @@ void bgt_literal(string gprB, string gprC, string literal_old){
 }
 
 void call_symbol(string symbol){
+  locationCounterInc(4);
   if(!firstPass){ // if(secondPass)
+    int symLocation = getSymbolLocation( symbol,  allLiteralTables,  currentSection);
+    int symNum, symVal;
+    if(checkIfSymbolIsGlobal(symbol, symbolTable)){
+      symNum = getSymbolNum(symbol, symbolTable);
+      symVal = 0;
+    }
+    else{
+      symNum = getSymbolSectionNum(symbol, symbolTable);
+      symVal = getSymbolValue(symbol, symbolTable);
+    }
+    allRelocationTables[currentSection].realocTable.push_back(RelocationTable{symLocation,"R_X86_64_32",symNum,symVal});
+    string symRelativeLocation = getLiteralRelativeDisplacement(symbol,locationCounter,allLiteralTables,sectionTable,currentSection);
+    output << "21 f0 0" << symRelativeLocation[0] << " " << symRelativeLocation[1] << symRelativeLocation[2] << endl;
+  }
+  else { // firstPass
+    if(checkIfLiteralTableContainsLiteral(symbol,allLiteralTables, currentSection)) return;
+    else {
+    // first time seeing this symbol
+      allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
+      pool << "00000000" << endl;
+      //poolTemp += "00000000\n";
+      return;
+    }
+  }
+}
+/*
+void call_symbol(string symbol){
+  /*if(!firstPass){ // if(secondPass)
+    // pc = pc + 4
+    locationCounterInc(4);
+    output << "91 ff 00 04" << endl;
+    // shit fucntion
+    locationCounterInc(4);
+    output << "fe dc ba 98" << endl;
+    // push(pc)
     push("%r15");
+    // pc <= symbol
     jmp_symbol(symbol);
   }
   else { // firstPass
+    locationCounterInc(4);
+    locationCounterInc(4);
     locationCounterInc(4);
     locationCounterInc(4);
     if(checkIfLiteralTableContainsLiteral(symbol,allLiteralTables, currentSection)) return;
@@ -465,15 +504,48 @@ void call_symbol(string symbol){
       return;
     }
   }
-}
+}*/
 
 void call_literal(string literal_old){
   string literal = literalToHex(literal_old);
+  locationCounterInc(4);
   if(!firstPass){ // if(secondPass)
+    string location = getLiteralRelativeDisplacement(literal_old,  locationCounter,allLiteralTables, sectionTable,  currentSection);
+    output << "21 f0 0" << location[0] << " " << location[1] << location[2] << endl;
+  }
+  else { // firstPass
+    if(checkIfLiteralTableContainsLiteral(literal_old,allLiteralTables, currentSection)) return;
+    else {
+    // first time seeing this literal
+      allLiteralTables[currentSection].literalTable.push_back(LiteralTable{literal_old,0});
+      while(literal.size()<8){
+        literal = "0"+literal;
+      }
+      pool << literal << endl;
+      //poolTemp += literal + '\n';
+
+      return;
+    }//poolTemp
+  }
+}
+/*
+void call_literal(string literal_old){
+  string literal = literalToHex(literal_old);
+  if(!firstPass){ // if(secondPass)
+    // pc = pc + 4
+    locationCounterInc(4);
+    output << "91 ff 00 04" << endl;
+    // shit fucntion
+    locationCounterInc(4);
+    output << "fe dc ba 98" << endl;
+    // push(pc)
     push("%r15");
+    // pc <= literal
     jmp_literal(literal_old);
   }
   else { // firstPass
+    locationCounterInc(4);
+    locationCounterInc(4);
     locationCounterInc(4);
     locationCounterInc(4);
     if(checkIfLiteralTableContainsLiteral(literal_old,allLiteralTables, currentSection)) return;
@@ -488,7 +560,7 @@ void call_literal(string literal_old){
       return;
     }
   }
-}
+}*/
 
 void ret(){
   if(!firstPass){ // if(secondPass)
@@ -501,9 +573,12 @@ void ret(){
 
 void iret(){
   if(!firstPass){ // if(secondPass)
-    pop("%r15");
-    output << "97 0e 00 04"<<endl;
+    // status = mem32[sp + 4]
     locationCounterInc(4);
+    output << "96 0e 00 04" << endl;
+    // pc = mem32[sp] , sp = sp + 8
+    locationCounterInc(4);
+    output << "93 fe 00 08" << endl;
   }
   else {
     locationCounterInc(4);
@@ -514,7 +589,7 @@ void iret(){
 void push(string gprC){
     locationCounterInc(4);
   if(!firstPass){ // if(secondPass)
-    output << "81 e0 "<< gprxToHex(gprC)<<"f fc"<<endl;
+    output << "81 e0 "<< gprxToHex(gprC)<<"0 04"<<endl;
   }
 }
 
@@ -547,6 +622,7 @@ void csrwr(string gprB, string csrA){
 }
 
 void ld_literal_val(string literal_old_old,string gprA){
+  cout << gprA << "-->" << gprxToHex(gprA)<<endl;
   string literal_old = literal_old_old.erase(0,1);
   string literal = literalToHex(literal_old);
     locationCounterInc(4);
@@ -677,7 +753,40 @@ void ld_grpX_mem_literal(string gprB, string literal, string gprA){
     while (hex_literal.size() < 3) hex_literal = "0"+hex_literal;
     output << "92 " <<  gprxToHex(gprA) << gprxToHex(gprB) << " 0" << hex_literal[0] << " " << hex_literal[1] << hex_literal[2]<<endl;
   }
-}
+}/*
+void ld_grpX_mem_symbol(string gprB, string symbol, string gprA){
+   if(!firstPass){ // if(secondPass)
+    locationCounterInc(4);
+    int symLocation = getSymbolLocation( symbol,  allLiteralTables,  currentSection);
+    int symNum, symVal;
+    if(checkIfSymbolIsGlobal(symbol, symbolTable)){
+      symNum = getSymbolNum(symbol, symbolTable);
+      symVal = 0;
+    }
+    else{
+      symNum = getSymbolSectionNum(symbol, symbolTable);
+      symVal = getSymbolValue(symbol, symbolTable);
+    }
+    allRelocationTables[currentSection].realocTable.push_back(RelocationTable{symLocation,"R_X86_64_32",symNum,symVal});
+    string symRelativeLocation = getLiteralRelativeDisplacement(symbol,locationCounter,allLiteralTables,sectionTable,currentSection);
+    output << "92 " << gprxToHex(gprA) << "f 0" << symRelativeLocation[0] << " " << symRelativeLocation[1] << symRelativeLocation[2] << endl; 
+    locationCounterInc(4);
+    output << "92 " << gprxToHex(gprA) << gprxToHex(gprA) <<" 00 00" << endl;
+  }
+  else { // firstPass
+    locationCounterInc(4);
+    locationCounterInc(4);
+    if(checkIfLiteralTableContainsLiteral(symbol,allLiteralTables, currentSection)) return;
+    else {
+    // first time seeing this symbol
+      allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
+      pool << "00000000" << endl;
+      //poolTemp += "00000000\n";
+      return;
+    }
+  }
+}*/
+
 void ld_grpX_mem_symbol(string gprB, string symbol, string gprA){
   locationCounterInc(4);
   if(!firstPass){ // if(secondPass)
@@ -829,6 +938,7 @@ int main(int, char **)
 
   // SYMBOL TABLE OUTPUT
   symbolTableOutput(symbolTable);
+  checkForUndefinedSymbols(symbolTable);
 
   cout << "--------------------------------------------------------------\n";
   cout << "Name\t\tIndex\t\tBase\t\tLength" << endl;

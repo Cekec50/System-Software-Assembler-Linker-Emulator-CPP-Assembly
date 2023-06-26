@@ -17,10 +17,9 @@ ofstream output;
 
 int main(int, char **){
 try{
-  //cout << stoi("80000000",0,16) << endl;
-  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",stoi("40000000",0,16)}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
-  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.math",stoi("F0000000",0,16)});
-  //sort(explicitDefinedAddresses.begin(), explicitDefinedAddresses.end(), compareAddresses);
+  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",int(stoul("40000000",0,16))}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
+  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.math",int(stoul("F0000000",0,16))});
+  sort(explicitDefinedAddresses.begin(), explicitDefinedAddresses.end(), compareAddresses);
   vector<string> allInputs = {"handler.o","isr_software.o","isr_terminal.o","isr_timer.o","main.o","math.o"};
 
   // READING INPUT 
@@ -158,22 +157,28 @@ try{
         }
       }
     }
-    //cout << "------------------------------" << endl;
-    //symbolTableOutput(linkerInput[i].symbolTable);
-    //cout << "------------------------------" << endl;
+    cout << "------------------------------" << endl;
+    symbolTableOutput(linkerInput[i].symbolTable);
+    cout << "------------------------------" << endl;
   }
   // GLOBAL SYMBOL TABLE INIT, LOCAL SECTIONS AND SYMBOLS UPDATE END
-  //symbolTableOutput(globalSymbolTable);
+  symbolTableOutput(globalSymbolTable);
+  checkForDuplicateDefinitions(globalSymbolTable);
 
   // RELA TABLE UPDATE
   for(int i = 0; i < linkerInput.size(); i++){
       for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
-        // cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
+        cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
         string sectionName = linkerInput[i].allRelocationTables[j].realocTableName.erase(0,9);
         int fileIndex = i;
         int displacement = mappedSectionList->getDisplacement(sectionName,fileIndex);
         for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
         linkerInput[i].allRelocationTables[j].realocTable[k].offset += displacement;
+        cout << linkerInput[i].allRelocationTables[j].realocTable[k].offset << " "
+        << linkerInput[i].allRelocationTables[j].realocTable[k].type << " "
+        << linkerInput[i].allRelocationTables[j].realocTable[k].symbol << " "
+
+        << linkerInput[i].allRelocationTables[j].realocTable[k].addend << endl;
         }
       }
   }
@@ -241,12 +246,12 @@ try{
     int outCounter = 0;
     while(outCounter < programBy4Adress.size()){
       if(programBy4Adress[outCounter].address + 4 ==programBy4Adress[outCounter+1].address){
-        output << decToHexaXXXXXXXXUpperFormat(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program << " " << programBy4Adress[outCounter+1].program;
+        output << intToTwosComplementHexString(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program << " " << programBy4Adress[outCounter+1].program;
         if(outCounter != programBy4Adress.size()-2) output << endl;
         outCounter += 2;
       }
       else {
-        output << decToHexaXXXXXXXXUpperFormat(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program;
+        output << intToTwosComplementHexString(programBy4Adress[outCounter].address) << ": " << programBy4Adress[outCounter].program;
         if(outCounter != programBy4Adress.size()-1) output << endl;
         outCounter += 1;
       }
