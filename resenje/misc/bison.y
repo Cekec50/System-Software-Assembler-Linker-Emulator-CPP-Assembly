@@ -73,23 +73,23 @@ externList:
 section:
   SECTION SYMBOL_MEM{
     section($2);
-    cout << "section "<< $2 << endl;
+    //cout << "section "<< $2 << endl;
   }
 ;
 
 word:
   WORD SYMBOL_MEM {
-    word();
+    word_symbol($2);
     //cout << "word "<< $2 << endl;
   }
   | 
   WORD LITERAL_MEM {
-    word();
+    word_literal($2);
     //cout << "word "<< $2 << endl;
   }
   | 
   WORD HEX {
-    word();
+    word_literal($2);
     //cout << "word "<< $2 << endl;
   }
 
@@ -97,15 +97,15 @@ word:
 
 wordList:
    word | wordList COMMA SYMBOL_MEM {
-    word();
+    word_symbol($3);
     //cout << "word "<< $3 << endl;
     }
   | wordList COMMA LITERAL_MEM{
-    word();
+    word_literal($3);
     //cout << "word "<< $3 << endl;
     } 
   | wordList COMMA HEX{
-    word();
+    word_literal($3);
     //cout << "word "<< $3 << endl;
   }
 ;

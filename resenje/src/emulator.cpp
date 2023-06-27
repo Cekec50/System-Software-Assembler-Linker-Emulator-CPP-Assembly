@@ -60,14 +60,14 @@ void setRegValue(int i,int value){
   if (i == 0) return;
   if (i>15 || i<0) throw runtime_error("Invalid register index!");
   else {
-    cout << "R" << i << " = " << value << endl;
+    // cout << "R" << i << " = " << value << endl;
     registers[i] = value;
     }
 }
 
 
 int getMem32(int address){
-  cout << address << endl;
+  // cout << address << endl;
 
   string hex_value = memory[address] + memory[address+1] + memory[address+2] + memory[address+3];
   return int(stoul(hex_value,0,16));
@@ -75,7 +75,7 @@ int getMem32(int address){
 
 void setMem32(int address, int value){
   string hex_value = intToTwosComplementHexString(value);
-  cout << "SETTING IN ADDRESS " << address << " VALUE " << hex_value << endl;
+  // cout << "SETTING IN ADDRESS " << address << " VALUE " << hex_value << endl;
   for(int i = 0; i < 4; i++){
     string char1(1,hex_value[2*i]);
     string char2(1,hex_value[2*i+1]);
@@ -87,7 +87,7 @@ void setMem32(int address, int value){
 void push(int value){
   registers[14] -= 4;
   string hex_value = intToTwosComplementHexString(value);
-  cout << "SETTING IN ADDRESS " << registers[14] << " VALUE " << hex_value << endl;
+  // cout << "SETTING IN ADDRESS " << registers[14] << " VALUE " << hex_value << endl;
   for(int i = 0; i < 4; i++){
     string char1(1,hex_value[2*i]);
     string char2(1,hex_value[2*i+1]);
@@ -114,8 +114,8 @@ void setCsrValue(int i, int value){
 
 void _halt(){
   halted = true;
-  cout << "Emulated processor executed halt instruction" << endl;
-  cout << "Emulated processor state:" << endl;
+   cout << "Emulated processor executed halt instruction" << endl;
+   cout << "Emulated processor state:" << endl;
   for(int i = 0; i < 16; i++){
     cout << "r" << i << "=0x" << intToTwosComplementHexString(getRegValue(i));
     if((i+1)%4==0) cout << endl;
@@ -168,9 +168,9 @@ void _jmp(){
       setRegValue(15,getMem32(getRegValue(RegA) + Disp));
       break;
     case 9:
-      cout << "r1: " << getRegValue(RegB) << " == r2:" << getRegValue(RegC) <<endl;
+      // cout << "r1: " << getRegValue(RegB) << " == r2:" << getRegValue(RegC) <<endl;
       if(getRegValue(RegB) == getRegValue(RegC)) {
-        cout << "PC = " << getRegValue(RegA) << " + "<< Disp <<endl;
+        // cout << "PC = " << getRegValue(RegA) << " + "<< Disp <<endl;
         setRegValue(15,getMem32(getRegValue(RegA) + Disp));
       }
       break;
@@ -255,9 +255,9 @@ void _store(){
       setMem32(getMem32(getRegValue(RegA) + getRegValue(RegB) + Disp),getRegValue(RegC));
       break;
     case 1:
-      cout << "r" << RegA << " = " << getRegValue(RegA) << "-" << Disp << endl;
+      // cout << "r" << RegA << " = " << getRegValue(RegA) << "-" << Disp << endl;
       setRegValue(RegA,getRegValue(RegA) - Disp); // IZMENJENO
-      cout << "Mem32[" << getRegValue(RegA) << "] = " << getRegValue(RegC) << endl;
+      // cout << "Mem32[" << getRegValue(RegA) << "] = " << getRegValue(RegC) << endl;
       setMem32(getRegValue(RegA),getRegValue(RegC));
       break;
     default:
@@ -275,13 +275,13 @@ void _load(){
       setRegValue(RegA,getRegValue(RegB) + Disp);
       break;
     case 2:
-      cout << "r" << RegA << " = Mem32[" << getRegValue(RegB) <<"+"<< getRegValue(RegC) <<"+"<<  Disp << endl;
+      // cout << "r" << RegA << " = Mem32[" << getRegValue(RegB) <<"+"<< getRegValue(RegC) <<"+"<<  Disp << endl;
       setRegValue(RegA,getMem32(getRegValue(RegB) + getRegValue(RegC) + Disp));
       break;
     case 3:
-      cout << "r" << RegA << " = Mem32[" << getRegValue(RegB)<< endl;
+      // cout << "r" << RegA << " = Mem32[" << getRegValue(RegB)<< endl;
       setRegValue(RegA,getMem32(getRegValue(RegB)));
-      cout << "r" << RegB << " = " << getRegValue(RegB) << " + " << Disp << endl;
+      // cout << "r" << RegB << " = " << getRegValue(RegB) << " + " << Disp << endl;
       setRegValue(RegB,getRegValue(RegB) + Disp);
       break;
     case 4:
@@ -303,8 +303,12 @@ void _load(){
   }
 }
 
-int main(int, char **){
-
+int main(int argc, char* argv[]){
+if(argc < 2){
+  cout << "Input file isn't specified!";
+  return 0;
+}
+string intputName = argv[1];
   try{
   registers = new int[16];
   for(int i = 0; i < 15; i++){
@@ -317,7 +321,8 @@ int main(int, char **){
   halted = false;
 
   // INPUT READ
-  input.open("../misc/output.hex");
+  input.open(intputName);
+  if(!input) throw runtime_error("Can't open hex file!");
   string line;
   while(!input.eof()){
     getline(input,line);
@@ -334,7 +339,7 @@ int main(int, char **){
   // INPUT READ END
 
   for (auto i = memory.begin(); i != memory.end(); i++) {
-        cout << i->first << " : " << i->second << '\n';
+        // cout << i->first << " : " << i->second << '\n';
   }
 
   while(!halted){
@@ -348,43 +353,43 @@ int main(int, char **){
 
     switch(OC){
       case 0:
-        cout << "halt" << endl;
+        // cout << "halt" << endl;
         _halt();
         break;
       case 1:
-        cout << "int" << endl;
+        // cout << "int" << endl;
         _int();
         break;
       case 2:
-        cout << "call" << endl;
+        // cout << "call" << endl;
         _call();
         break;
       case 3:
-        cout << "jmp" << endl;
+        // cout << "jmp" << endl;
         _jmp();
         break;
       case 4:
-        cout << "xchg" << endl;
+        // cout << "xchg" << endl;
         _xchg();
         break;
       case 5:
-        cout << "arithemtic" << endl;
+        // cout << "arithemtic" << endl;
         _arithmetic();
         break;
       case 6:
-        cout << "logic" << endl;
+        // cout << "logic" << endl;
         _logic();
         break;
       case 7:
-        cout << "shift" << endl;
+        // cout << "shift" << endl;
         _shift();
         break;
       case 8:
-        cout << "store" << endl;
+        // cout << "store" << endl;
         _store();
         break;
       case 9:
-        cout << "load "  << OC << MOD << endl;
+        // cout << "load "  << OC << MOD << endl;
         _load();
         break;
       default:
@@ -396,19 +401,19 @@ int main(int, char **){
   catch(runtime_error& e){
   cerr << "EMULATION ERROR: " << e.what() << endl;
   for (auto i = memory.begin(); i != memory.end(); i++) {
-        cout << i->first << " : " << i->second << '\n';
+        // cout << i->first << " : " << i->second << '\n';
   }
 }
 catch(invalid_argument& e){
   cerr << "EMULATION ERROR: " << e.what() << endl;
   for (auto i = memory.begin(); i != memory.end(); i++) {
-        cout << i->first << " : " << i->second << '\n';
+        // cout << i->first << " : " << i->second << '\n';
   }
 }
 catch(out_of_range& e){
   cerr << "EMULATION ERROR: " << e.what() << endl;
   for (auto i = memory.begin(); i != memory.end(); i++) {
-        cout << i->first << " : " << i->second << '\n';
+        // cout << i->first << " : " << i->second << '\n';
   }
 }
 

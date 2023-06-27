@@ -13,10 +13,9 @@ int sectionLocationCounter = 0;
 int currentSection = -1;
 int symNum = 0;
 bool firstPass = true;
-//int sectionIndx = 0;
 fstream output;
 fstream pool;
-//string //poolTemp = "";
+
 
 
 
@@ -31,14 +30,43 @@ void locationCounterInc(int inc)
     locationCounter += inc;
 }
 
-void word(){
-    locationCounterInc(4);
+void word_literal(string literal_old){
+  locationCounterInc(4);
   if (firstPass){
   }
-  else{
-    output << "00 00 00 00" << endl; 
+  else{ // if(secondPass)
+    string literal = literalToHex(literal_old);
+    while(literal.size() < 8){
+      literal = "0" + literal;
+    }
+    for(int i = 0; i < 4; i++){
+      output << literal[2*i] << literal[2*i + 1];
+      if( i != 3) output << " ";
+      else output << endl;
+    }
+  }
+
+}
+
+
+void word_symbol(string symbol){
+  locationCounterInc(4);
+  if(!firstPass){ // if(secondPass)
+    int symNum, symVal;
+    if(checkIfSymbolIsGlobal(symbol, symbolTable)){
+      symNum = getSymbolNum(symbol, symbolTable);
+      symVal = 0;
+    }
+    else{
+      symNum = getSymbolSectionNum(symbol, symbolTable);
+      symVal = getSymbolValue(symbol, symbolTable);
+    }
+    int instrLocation = locationCounter - 4 - sectionTable[currentSection].base;
+    allRelocationTables[currentSection].realocTable.push_back(RelocationTable{instrLocation ,"R_X86_64_32",symNum,symVal});
+    output << "00 00 00 00" << endl;
   }
 }
+
 void global(string name)
 {
   if (firstPass)
@@ -122,7 +150,6 @@ void ascii(string old_str){
 
 void end()
 {
-  // da ti treba update length polja u trenutnoj sekciji ?
   sectionTable[currentSection].length = locationCounter - sectionTable[currentSection].base;
 }
 
@@ -262,10 +289,9 @@ void jmp_literal(string literal_old){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
 
       return;
-    }//poolTemp
+    }
   }
 }
 void jmp_symbol(string symbol){
@@ -291,7 +317,6 @@ void jmp_symbol(string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -320,7 +345,6 @@ void beq_symbol(string gprB, string gprC, string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -341,7 +365,6 @@ void beq_literal(string gprB, string gprC, string literal_old){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
@@ -370,7 +393,6 @@ void bne_symbol(string gprB, string gprC, string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -391,7 +413,6 @@ void bne_literal(string gprB, string gprC, string literal_old){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
@@ -420,7 +441,6 @@ void bgt_symbol(string gprB, string gprC, string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -442,7 +462,7 @@ void bgt_literal(string gprB, string gprC, string literal_old){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
+      
       return;
     }
   }
@@ -471,40 +491,11 @@ void call_symbol(string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
+      
       return;
     }
   }
 }
-/*
-void call_symbol(string symbol){
-  /*if(!firstPass){ // if(secondPass)
-    // pc = pc + 4
-    locationCounterInc(4);
-    output << "91 ff 00 04" << endl;
-    // shit fucntion
-    locationCounterInc(4);
-    output << "fe dc ba 98" << endl;
-    // push(pc)
-    push("%r15");
-    // pc <= symbol
-    jmp_symbol(symbol);
-  }
-  else { // firstPass
-    locationCounterInc(4);
-    locationCounterInc(4);
-    locationCounterInc(4);
-    locationCounterInc(4);
-    if(checkIfLiteralTableContainsLiteral(symbol,allLiteralTables, currentSection)) return;
-    else {
-    // first time seeing this symbol
-      allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
-      pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
-      return;
-    }
-  }
-}*/
 
 void call_literal(string literal_old){
   string literal = literalToHex(literal_old);
@@ -522,45 +513,11 @@ void call_literal(string literal_old){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
-
-      return;
-    }//poolTemp
-  }
-}
-/*
-void call_literal(string literal_old){
-  string literal = literalToHex(literal_old);
-  if(!firstPass){ // if(secondPass)
-    // pc = pc + 4
-    locationCounterInc(4);
-    output << "91 ff 00 04" << endl;
-    // shit fucntion
-    locationCounterInc(4);
-    output << "fe dc ba 98" << endl;
-    // push(pc)
-    push("%r15");
-    // pc <= literal
-    jmp_literal(literal_old);
-  }
-  else { // firstPass
-    locationCounterInc(4);
-    locationCounterInc(4);
-    locationCounterInc(4);
-    locationCounterInc(4);
-    if(checkIfLiteralTableContainsLiteral(literal_old,allLiteralTables, currentSection)) return;
-    else {
-    // first time seeing this literal
-      allLiteralTables[currentSection].literalTable.push_back(LiteralTable{literal_old,0});
-      while(literal.size()<8){
-        literal = "0"+literal;
-      }
-      pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
-}*/
+}
+
 
 void ret(){
   if(!firstPass){ // if(secondPass)
@@ -622,7 +579,6 @@ void csrwr(string gprB, string csrA){
 }
 
 void ld_literal_val(string literal_old_old,string gprA){
-  cout << gprA << "-->" << gprxToHex(gprA)<<endl;
   string literal_old = literal_old_old.erase(0,1);
   string literal = literalToHex(literal_old);
     locationCounterInc(4);
@@ -639,7 +595,6 @@ void ld_literal_val(string literal_old_old,string gprA){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
@@ -664,7 +619,6 @@ void ld_literal_mem(string literal_old,string gprA){
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
@@ -693,7 +647,6 @@ void ld_symbol_val(string symbol_old, string gprA){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -726,7 +679,6 @@ void ld_symbol_mem(string symbol, string gprA){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -817,7 +769,6 @@ void st_literal_mem(string gprC, string literal_old){   //
         literal = "0"+literal;
       }
       pool << literal << endl;
-      //poolTemp += literal + '\n';
       return;
     }
   }
@@ -850,7 +801,6 @@ void st_symbol_mem(string gprC, string symbol){
     // first time seeing this symbol
       allLiteralTables[currentSection].literalTable.push_back(LiteralTable{symbol,0});
       pool << "00000000" << endl;
-      //poolTemp += "00000000\n";
       return;
     }
   }
@@ -889,14 +839,28 @@ void st_grpX_mem_symbol(string gprC, string symbol, string gprA){
   }
 }
 
-int main(int, char **)
+int main(int argc, char* argv[])
 {
-
-
+  if(argv[1][0] != '-' || argv[1][1] != 'o'){
+      //cout << argv[1] << endl;
+      cout << "-o argument missing!" << endl;
+      return 0;
+  }
+  if(argc < 3) {
+    cout << "Output file wasn't specified!" << endl;
+    return 0;
+  }
+  if(argc < 4) {
+    cout << "Input file wasn't specified!" << endl;
+    return 0;
+  }
   try{
-  vector<string> allInputs = {"handler.s","isr_software.s","isr_terminal.s","isr_timer.s","main.s","math.s"};
-
-    for(int iterator = 0; iterator < allInputs.size();iterator++){
+  string inputFromMain = argv[3];
+  string outputFromMain = argv[2];
+  // vector<string> allInputs = {"handler.s","isr_software.s","isr_terminal.s","isr_timer.s","main.s","math.s"};
+  vector<string> allInputs = {inputFromMain};
+  
+  for(int iterator = 0; iterator < allInputs.size();iterator++){
   symbolTable.clear();
   sectionTable.clear();
   allRelocationTables.clear();
@@ -910,15 +874,18 @@ int main(int, char **)
 
 
   string input =  allInputs[iterator];
-  string inputDir = "../tests/";
+  string inputDir = "./tests/";
+  string thrashDir = "./thrash/";
   string inputName = inputDir + input;
-  string outputName = input.erase(input.size()-2,input.size())+"Instr.o";
-  string poolName = input+"Pool.o";
-  string outputFinalName = input + ".o";
+  string outputName = thrashDir + input.erase(input.size()-2,input.size())+"Instr.o";
+  string poolName = thrashDir + input+"Pool.o";
+  string outputFinalName = outputFromMain;
 
 
   output.open(outputName,fstream::out);
   pool.open(poolName,fstream::out);
+  if(!output) throw runtime_error("Can't create output instruction file! (./thrash directory missing)");
+  if(!pool) throw runtime_error("Can't create output pool file! (./thrash directory missing)");
   
 
   FILE *myfile = fopen(inputName.c_str(), "r"); // open a file handle to a particular file:
@@ -933,21 +900,19 @@ int main(int, char **)
   yyin = myfile; // Set lex to read from it instead of defaulting to STDIN:
   symbolTable.push_back(SymbolTable{symNum++, 0, 0, NOTYP, LOC, false, UND, "NONAME"});
   yyparse(); // First pass
-  cout << "--------------------------------------------------------------\n";
   
 
   // SYMBOL TABLE OUTPUT
-  symbolTableOutput(symbolTable);
+  //symbolTableOutput(symbolTable);
+
+  // CHECK FOR UNDEFINED SYMBOLS
   checkForUndefinedSymbols(symbolTable);
 
-  cout << "--------------------------------------------------------------\n";
-  cout << "Name\t\tIndex\t\tBase\t\tLength" << endl;
-  for (int i = 0; i < sectionTable.size(); i++){
-    cout << sectionTable[i].name << "\t\t" << sectionTable[i].index << "\t\t" << sectionTable[i].base << "\t\t" << sectionTable[i].length << endl;
-  }
-  cout << "--------------------------------------------------------------\n";
-  cout << "locationCounter = " << locationCounter << endl;
+  // SECTION TABLE OUTPUT
+  //sectionTableOutput(sectionTable);
+  
 
+  // LITERAL TABLE LOCATION UPDATE
   for(int i=0; i < allLiteralTables.size(); i++){
     for(int j = 0; j < allLiteralTables[i].literalTable.size(); j++){
       for(int k = 0; k < sectionTable.size(); k++){
@@ -957,14 +922,9 @@ int main(int, char **)
       }
     }
   }
-  cout << "--------------------------------------------------------------\n";
-  cout << "Key\tSection\tLocation" << endl;
-  for(int i = 0; i < allLiteralTables.size();i++){
-    for(int j = 0; j < allLiteralTables[i].literalTable.size();j++){
-      cout << allLiteralTables[i].literalTable[j].key << '\t' << allLiteralTables[i].sectionIndex << '\t' << allLiteralTables[i].literalTable[j].location << endl;
-    }
-  }
-  cout << "--------------------------------------------------------------\n";
+  // LITERAL TABLE LOCATION UPDATE END
+
+  
   // firstPass END
   firstPass = false;
   locationCounter = 0;
@@ -974,16 +934,11 @@ int main(int, char **)
   yyin = myfile;
   yyparse(); // Second pass
 
-  cout << "--------------------------------------------------------------\n";
-  cout << "Key\tSection\tLocation" << endl;
-  for(int i = 0; i < allLiteralTables.size();i++){
-    for(int j = 0; j < allLiteralTables[i].literalTable.size();j++){
-      cout << allLiteralTables[i].literalTable[j].key << '\t' << allLiteralTables[i].sectionIndex << '\t' << allLiteralTables[i].literalTable[j].location << endl;
-    }
-  }
-  cout << "--------------------------------------------------------------\n";
-  
-  allRelocationTableOutput(allRelocationTables);
+  // LITERAL TABLE OUTPUT
+  //literalTableOutput(allLiteralTables);
+
+  // RELOCATION TABLE OUTPUT
+  //allRelocationTableOutput(allRelocationTables);
 
   fclose(myfile);
   output.close();
@@ -992,15 +947,6 @@ int main(int, char **)
   output.open(outputName);
   pool.open(poolName);
 
-  
-  /*
-  while(!pool.eof()){ 
-    PoolTable poolTable = getPoolTable(pool);
-    insertPoolIntoSectio(output,poolTable);
-  }*/
-
-  
-  
   
   string useless;
   fstream outputFinal;
@@ -1034,24 +980,6 @@ int main(int, char **)
   for (int i = 0; i < symbolTable.size(); i++)
   {
     outputFinal << symbolTable[i].num << " " << symbolTable[i].value << " " << symbolTable[i].size << " ";
-    /*if (symbolTable[i].type == 0)
-      outputFinal << "NOTYP"
-           << "\t";
-    else
-      outputFinal << "SCTN"
-           << "\t";
-    if (symbolTable[i].bind == 0)
-      outputFinal << "LOC"
-           << "\t";
-    else
-      outputFinal << "GLOB"
-           << "\t";
-    if (symbolTable[i].globalDef)
-      outputFinal << "true";
-    else
-      outputFinal << "false";
-    if(symbolTable[i].ndx == 0 ) outputFinal << "\t" << "UND" << "\t" << symbolTable[i].name << endl;
-    else outputFinal << "\t" << symbolTable[i].ndx << "\t" << symbolTable[i].name << endl;*/
     outputFinal << symbolTable[i].type << " " << symbolTable[i].bind << " " << symbolTable[i].globalDef << " " << symbolTable[i].ndx << " "<< symbolTable[i].name << endl;
   }
 

@@ -1,2 +1,0 @@
-./asembler.sh
-./deleter.sh

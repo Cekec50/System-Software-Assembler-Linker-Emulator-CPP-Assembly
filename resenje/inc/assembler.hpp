@@ -14,7 +14,11 @@ void printLC();
 // -----------------------------------------------------------------------------------------------------------------------------------
 void locationCounterInc(int inc);
 
-void word();
+//void word();
+
+void word_literal(string literal);
+
+void word_symbol(string symbol);
 
 void equ_literal(string name,string value);
 

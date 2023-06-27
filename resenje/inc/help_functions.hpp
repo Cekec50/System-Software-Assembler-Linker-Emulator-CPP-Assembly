@@ -55,6 +55,10 @@ void symbolTableOutput(vector<SymbolTable> symbolTable);
 
 void allRelocationTableOutput(vector<AllRelocationTables> allRelocationTables);
 
+void sectionTableOutput(vector<SectionTable> sectionTable);
+
+void literalTableOutput(vector<AllLiteralTables> allLiteralTables);
+
 //int indexOfSection(vector<JoinedSectionsTable> joinedTable, string sectionName);
 
 string getNameOfSection(vector<SymbolTable> symbolTable,int ndx);
@@ -75,6 +79,5 @@ string intToTwosComplementHexString(int value);
 
 
 
-// output << "82 f0 " << std::hex << gprC.erase(0,2) << "0 00" << endl; 
 
 

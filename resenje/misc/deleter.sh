@@ -1,1 +1,0 @@
-rm handlerInstr.o isr_softwareInstr.o isr_terminalInstr.o isr_timerInstr.o mainInstr.o mathInstr.o handlerPool.o isr_softwarePool.o isr_terminalPool.o isr_timerPool.o mainPool.o mathPool.o 

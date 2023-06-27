@@ -11,16 +11,54 @@ MappedSectionDLList* mappedSectionList;
 vector<SymbolTable> globalSymbolTable;
 vector<ExplicitDefinedAddress> explicitDefinedAddresses;
 ofstream output;
+string outputName;
+vector<string> allInputs;
 
 
 
 
-int main(int, char **){
+int main(int argc, char* argv[]){
+bool hexArg = false;
+bool oArg = false;
+for(int i = 1; i < argc; i++){
+  string mainArg = argv[i];
+  if(mainArg == "-hex") {
+    hexArg = true;
+  }
+  else if (mainArg.find("-place=") != string::npos) {
+    string mainArgSection;
+    mainArg.erase(0,7);
+    for(int j = 0; j < mainArg.size();j++){
+      if(mainArg[j] != '@') mainArgSection += mainArg[j];
+      else break;
+    }
+    mainArg.erase(0,mainArgSection.size()+3);
+    explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#."+mainArgSection,int(stoul(mainArg,0,16))});
+  }
+  else if(mainArg == "-o"){
+    string mainArgTemp = argv[i+1];
+    outputName = mainArgTemp;
+    oArg = true;
+    i++;
+  }
+  else if(mainArg[mainArg.size()-1] == 'o' && mainArg[mainArg.size()-2] == '.'){
+    allInputs.push_back(mainArg);
+  }
+}
+if(!hexArg || !oArg) return 0;
+/*
+for(int i = 0; i < allInputs.size(); i++){
+  cout << allInputs[i] << endl;
+}
+for(int i = 0; i < explicitDefinedAddresses.size(); i++){
+  cout << explicitDefinedAddresses[i].sectionName << "  " << explicitDefinedAddresses[i].address << endl;
+}
+*/
 try{
-  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",int(stoul("40000000",0,16))}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
-  explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.math",int(stoul("F0000000",0,16))});
+  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.my_code",int(stoul("40000000",0,16))}); /// MUST APPEND '#.' TO SECTION NAME, SO I CAN COMPARE TO linkerInput NAMES
+  //explicitDefinedAddresses.push_back(ExplicitDefinedAddress{"#.math",int(stoul("F0000000",0,16))});
   sort(explicitDefinedAddresses.begin(), explicitDefinedAddresses.end(), compareAddresses);
-  vector<string> allInputs = {"handler.o","isr_software.o","isr_terminal.o","isr_timer.o","main.o","math.o"};
+  //allInputs = {"handler.o","isr_software.o","isr_terminal.o","isr_timer.o","main.o","math.o"};
 
   // READING INPUT 
   for(int i = 0; i < allInputs.size(); i++){
@@ -30,18 +68,20 @@ try{
     linkerInput.push_back(LinkerInput{allSectionPrograms,symbolTable,allRelocationTables});
 
     input.open(allInputs[i]);
+    if(!input) throw runtime_error("Can't open object file: " + allInputs[i]);
     // READING PROGRAM
     string line;
-    getline(input,line);
+    std::getline(input,line);
     while(!input.eof()){
-      
+      //if(!input.good()) throw runtime_error("Error reading input files!");
       string sectionName = "#." + line.erase(0,2);
       string sectionProgram;
-      getline(input,line);
+      std::getline(input,line);
       int sectionSize = 0;
       while(line[0] != '#'){ 
+        if(!input.good()) throw runtime_error("Error reading input files!");
         sectionProgram = sectionProgram + line + '\n';
-        getline(input,line);
+        std::getline(input,line);
         sectionSize += 4;
       }
       linkerInput[i].allSectionPrograms.push_back(SectionProgram{false,sectionName,sectionProgram,sectionSize});
@@ -52,12 +92,13 @@ try{
     // READING PROGRAM END
     int num;int value;int size;int type;int bind;bool globalDef;int ndx;string name;
     // READING SYMBOL TABLE
-    getline(input,line); // skip ##.symtab
-    getline(input,line); // skip Num	Value	Size	Type	Bind	globDef	Ndx	Name
+    std::getline(input,line); // skip ##.symtab
+    std::getline(input,line); // skip Num	Value	Size	Type	Bind	globDef	Ndx	Name
     while(!(line.find("###.rela.") != string::npos)&&!input.eof()){
+      //if(!input.good()) throw runtime_error("Error reading input files!");
       istringstream iss(line);
       iss >> num >> value >> size >> type >> bind >> globalDef >> ndx >> name;
-      getline(input,line);
+      std::getline(input,line);
       linkerInput[i].symbolTable.push_back(SymbolTable{num,value,size,static_cast<Type>(type),static_cast<Bind>(bind),globalDef,ndx,name});
     }
     // READING SYMBOL TABLE END
@@ -65,14 +106,15 @@ try{
     // READING RELOCATION TABLE
     int realocTableIndex = 1;
     while(!input.eof()){
+      //if(!input.good()) throw runtime_error("Error reading input files!");
       string realocTableName = "###.rela." + line.erase(0,9);
       vector<RelocationTable> realocTable;
-      getline(input,line); // skip ###.rela.
-      getline(input,line); // skip Offset	Type		Symbol	Addend line
+      std::getline(input,line); // skip ###.rela.
+      std::getline(input,line); // skip Offset	Type		Symbol	Addend line
       while(!(line.find("###.rela.") != string::npos)&&!input.eof()){
         istringstream iss(line);
         iss >> offset1 >> type1 >> symbol1 >> addend1 ;
-        getline(input,line);
+        std::getline(input,line);
         realocTable.push_back(RelocationTable{offset1,type1,symbol1,addend1});
       }
       linkerInput[i].allRelocationTables.push_back(AllRelocationTables{realocTableName,realocTableIndex++,realocTable});
@@ -126,8 +168,11 @@ try{
         });
     }
   }
-  mappedSectionList->printList();
   // MAPPING END
+
+  // MAPPED SECTION OUTPUT
+  // mappedSectionList->printList();
+
 
   // CHECK IF ADDRESSES OVERLAP
   mappedSectionList->checkIfMappedAddressesOverlap();
@@ -157,28 +202,32 @@ try{
         }
       }
     }
-    cout << "------------------------------" << endl;
-    symbolTableOutput(linkerInput[i].symbolTable);
-    cout << "------------------------------" << endl;
+    //cout << "------------------------------" << endl;
+    //symbolTableOutput(linkerInput[i].symbolTable);
+    //cout << "------------------------------" << endl;
   }
   // GLOBAL SYMBOL TABLE INIT, LOCAL SECTIONS AND SYMBOLS UPDATE END
-  symbolTableOutput(globalSymbolTable);
+
+  // GLOBAL SYMBOL TABLE OUTPUT
+  // symbolTableOutput(globalSymbolTable);
+
+  // CHECK FOR DUPLICATE DEFINTIONS
   checkForDuplicateDefinitions(globalSymbolTable);
 
   // RELA TABLE UPDATE
   for(int i = 0; i < linkerInput.size(); i++){
       for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
-        cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
+        //cout << linkerInput[i].allRelocationTables[j].realocTableName << endl; 
         string sectionName = linkerInput[i].allRelocationTables[j].realocTableName.erase(0,9);
         int fileIndex = i;
         int displacement = mappedSectionList->getDisplacement(sectionName,fileIndex);
         for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
         linkerInput[i].allRelocationTables[j].realocTable[k].offset += displacement;
-        cout << linkerInput[i].allRelocationTables[j].realocTable[k].offset << " "
-        << linkerInput[i].allRelocationTables[j].realocTable[k].type << " "
-        << linkerInput[i].allRelocationTables[j].realocTable[k].symbol << " "
+        //cout << linkerInput[i].allRelocationTables[j].realocTable[k].offset << " "
+        //<< linkerInput[i].allRelocationTables[j].realocTable[k].type << " "
+        //<< linkerInput[i].allRelocationTables[j].realocTable[k].symbol << " "
 
-        << linkerInput[i].allRelocationTables[j].realocTable[k].addend << endl;
+        //<< linkerInput[i].allRelocationTables[j].realocTable[k].addend << endl;
         }
       }
   }
@@ -200,7 +249,6 @@ try{
   // FINAL PROGRAM PREPARE END
 
   // RELOCATION
-
   for(int i = 0; i < linkerInput.size(); i++){
     for(int j = 0; j <linkerInput[i].allRelocationTables.size(); j++){
       for(int k = 0; k < linkerInput[i].allRelocationTables[j].realocTable.size(); k++){
@@ -224,7 +272,7 @@ try{
   // RELOCATION END
 
   // OUTPUT
-    ofstream output("output.hex");
+    ofstream output(outputName);
     int address = mappedSectionList->getSectionAddress(0);
     int sectionLength = mappedSectionList->getSectionLength(0);
     vector<ProgramByAddress> programBy4Adress;

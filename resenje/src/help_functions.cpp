@@ -477,5 +477,23 @@ string intToTwosComplementHexString(int value) {
     }
     return hexString;
 }
+
+
+void sectionTableOutput(vector<SectionTable> sectionTable){
+  cout << "Name\t\tIndex\t\tBase\t\tLength" << endl;
+  for (int i = 0; i < sectionTable.size(); i++){
+    cout << sectionTable[i].name << "\t\t" << sectionTable[i].index << "\t\t" << sectionTable[i].base << "\t\t" << sectionTable[i].length << endl;
+  }
+}
     
+void literalTableOutput(vector<AllLiteralTables> allLiteralTables){
+  cout << "-----------------------------------" << endl;
+  cout << "Key\tSection\tLocation" << endl;
+  for(int i = 0; i < allLiteralTables.size();i++){
+    for(int j = 0; j < allLiteralTables[i].literalTable.size();j++){
+      cout << allLiteralTables[i].literalTable[j].key << '\t' << allLiteralTables[i].sectionIndex << '\t' << allLiteralTables[i].literalTable[j].location << endl;
+    }
+    cout << "-----------------------------------" << endl;
+  }
+}
     
