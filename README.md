@@ -1,4 +1,4 @@
-# System Software Project: Assembler, Linker & Emulator
+# System Software: Assembler, Linker & Emulator
 
 ## Project Overview
 
